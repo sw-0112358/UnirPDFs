@@ -1,0 +1,13 @@
+{
+  "name": "UnirPDFs",
+  "short_name": "UnirPDFs",
+  "start_url": "/UnirPDFs/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "icono.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
