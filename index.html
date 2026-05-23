@@ -334,11 +334,11 @@
           <div class="card-body">
             <div class="split-config" style="margin-bottom:14px;">
               <label for="Numerodefolio" style="font-size:12px;font-weight:500;color:var(--text-mid);white-space:nowrap;">Folio inicial</label>
-              <input type="number" id="Numerodefolio" placeholder="N°" min="1" style="width:100px;">
+              <input type="number" id="Numerodefolio" value="1" placeholder="N°" min="1" style="width:100px;">
             </div>
             <div class="btn-row">
-              <button class="btn btn-outline" onclick="cargarZip()">📂 Cargar ZIP</button>
-              <button class="btn btn-primary" id="btnStart" onclick="start()" disabled>▶ Procesar y descargar</button>
+              <button class="btn btn-outline" onclick="imgRenombreCargarZip()">📂 Cargar ZIP</button>
+              <button class="btn btn-primary" id="btnStart" onclick="imgRenombreStart()" disabled>▶ Procesar y descargar</button>
             </div>
           </div>
         </div>
@@ -379,9 +379,15 @@
               <div class="card-title">Unir PDFs</div>
               <div class="card-desc">Combina múltiples archivos sin perder calidad</div>
             </div>
-            <div class="card-badge" id="pdfBadge">Sin cargar</div>
+            <div class="card-badge" id="pdfBadge">Sin cargar</div>                   
+          </div>  
+          
+          <div class="split-config" style="margin-bottom:14px;">
+            <label for="NumerodefolioUnirpdf" style="font-size:12px;font-weight:500;color:var(--text-mid);white-space:nowrap;">Folio inicial</label>
+            <input type="number" id="NumerodefolioUnirpdf" value="1" placeholder="N°" min="1" style="width:100px;">
           </div>
-          <div class="card-body">
+
+          <div class="card-body">           
             <ul class="pdf-list" id="pdfList">
               <li class="pdf-empty">Selecciona archivos PDF para comenzar</li>
             </ul>
@@ -432,19 +438,27 @@
 
     <div class="footer">Folios · Sistema de Gestión Documental</div>
 
+    <script>
+      window.setStatus = function(msg, type = '') {
+        const el = document.getElementById('status');
+        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
+        el.className = 'topbar-status' + (type ? ' ' + type : '');
+      };
+    </script>
+
+
+
 
     <!-- ══ ZIP Renombre ══ -->
-    <script>
+
+
+    <script type="module">
+
       let trabajando = false;
       const FoliosFrente = [];
       const FoliosVuelto = [];
       let zipGlobal = null;
 
-      function setStatus(msg, type = '') {
-        const el = document.getElementById('status');
-        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
-        el.className = 'topbar-status' + (type ? ' ' + type : '');
-      }
 
       function actualizarZipBadge() {
         const total = FoliosFrente.length + FoliosVuelto.length;
@@ -463,13 +477,13 @@
         });
       }
 
-      async function cargarZip() {
-        if (trabajando) { setStatus('Proceso en ejecución, espere.', 'err'); return; }
+      async function imgRenombreCargarZip() {
+        if (trabajando) { window.setStatus('Proceso en ejecución, espere.', 'err'); return; }
         try {
           trabajando = true;
-          setStatus('Seleccionando archivo ZIP...', 'busy');
+          window.setStatus('Seleccionando archivo ZIP...', 'busy');
           const file = await buscarArchivoZip();
-          setStatus('Leyendo ' + file.name + '...', 'busy');
+          window.setStatus('Leyendo ' + file.name + '...', 'busy');
           const zip = await JSZip.loadAsync(file);
           zipGlobal = zip;
           FoliosFrente.length = 0; FoliosVuelto.length = 0;
@@ -486,7 +500,7 @@
           }
           trabajando = false;
           actualizarZipBadge();
-          setStatus(`ZIP listo · ${count} JPG · Frente: ${FoliosFrente.length} · Vuelto: ${FoliosVuelto.length}`, 'ok');
+          window.setStatus(`ZIP listo · ${count} JPG · Frente: ${FoliosFrente.length} · Vuelto: ${FoliosVuelto.length}`, 'ok');
         } catch (err) { trabajando = false; setStatus('Error al cargar ZIP: ' + (err.message || err), 'err'); }
       }
 
@@ -495,10 +509,10 @@
         return folioInicial + '_' + folioFinal + '.zip';
       }
 
-      async function start() {
-        if (!zipGlobal) { setStatus('Carga un ZIP primero.', 'err'); return; }
+      async function imgRenombreStart() {
+        if (!zipGlobal) { window.setStatus('Carga un ZIP primero.', 'err'); return; }
         const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
-        if (isNaN(folioInicial)) { setStatus('Número de folio inválido.', 'err'); return; }
+        if (isNaN(folioInicial)) { window.setStatus('Número de folio inválido.', 'err'); return; }
         try {
           const nuevoZip = new JSZip();
           let cF = folioInicial, cV = folioInicial;
@@ -506,26 +520,34 @@
             const contenido = await zipGlobal.files[filename].async('blob');
             const nombre = (cF++) + 'F.jpg';
             nuevoZip.file(nombre, contenido);
-            setStatus('Procesando: ' + nombre, 'busy');
+            window.setStatus('Procesando: ' + nombre, 'busy');
           }
           for (const filename of FoliosVuelto) {
             const contenido = await zipGlobal.files[filename].async('blob');
             const nombre = (cV++) + 'V.jpg';
             nuevoZip.file(nombre, contenido);
-            setStatus('Procesando: ' + nombre, 'busy');
+            window.setStatus('Procesando: ' + nombre, 'busy');
           }
           const nombreFinal = FinalFileName(folioInicial, FoliosFrente.length, FoliosVuelto.length);
           const blobFinal = await nuevoZip.generateAsync({ type: 'blob' });
           const a = document.createElement('a');
           a.href = URL.createObjectURL(blobFinal); a.download = nombreFinal; a.click();
-          setStatus('ZIP generado: ' + nombreFinal, 'ok');
-        } catch (err) { setStatus('Error en procesamiento: ' + err.message, 'err'); }
+          window.setStatus('ZIP generado: ' + nombreFinal, 'ok');
+        } catch (err) { window.setStatus('Error en procesamiento: ' + err.message, 'err'); }
       }
 
-      window.onload = () => { document.getElementById('Numerodefolio').value = 1; actualizarZipBadge(); };
+      window.onload = () => { actualizarZipBadge(); };
+
+      window.imgRenombreStart = imgRenombreStart;
+      window.imgRenombreCargarZip = imgRenombreCargarZip;
+
     </script>
 
+
+
     <!-- ══ ZIP → PDF ══ -->
+
+
     <script type="module">
       import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
 
@@ -544,12 +566,6 @@
 
       let zipPDFGlobal = null;
       let imagenesOrdenadas = [];
-
-      function setStatus(msg, type = '') {
-        const el = document.getElementById('status');
-        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
-        el.className = 'topbar-status' + (type ? ' ' + type : '');
-      }
 
       function actualizarBadgeZip2PDF() {
         const badge = document.getElementById('zip2pdfBadge');
@@ -581,7 +597,7 @@
           fi.onchange = async () => {
             if (!fi.files[0]) return;
             const file = fi.files[0];
-            setStatus('Leyendo ' + file.name + '...', 'busy');
+            window.setStatus('Leyendo ' + file.name + '...', 'busy');
             try {
               const zip = await JSZip.loadAsync(file);
               zipPDFGlobal = zip;
@@ -589,9 +605,9 @@
               paths.sort((a, b) => sortAlphanumeric(a.split('/').pop(), b.split('/').pop()));
               imagenesOrdenadas = paths.map(p => ({ path: p, nombre: p.split('/').pop() }));
               mostrarVistaPrevia(); actualizarBadgeZip2PDF();
-              setStatus(`ZIP listo · ${imagenesOrdenadas.length} imágenes ordenadas`, 'ok');
+              window.setStatus(`ZIP listo · ${imagenesOrdenadas.length} imágenes ordenadas`, 'ok');
               resolve();
-            } catch (err) { setStatus('Error al leer ZIP: ' + err.message, 'err'); resolve(); }
+            } catch (err) { window.setStatus('Error al leer ZIP: ' + err.message, 'err'); resolve(); }
           };
           fi.click();
         });
@@ -599,13 +615,13 @@
 
       async function convertirZipAPDF() {
         if (!zipPDFGlobal || imagenesOrdenadas.length === 0) { setStatus('Carga un ZIP con imágenes primero.', 'err'); return; }
-        setStatus('Creando PDF...', 'busy');
+        window.setStatus('Creando PDF...', 'busy');
         try {
           const pdfDoc = await PDFDocument.create();
           const total  = imagenesOrdenadas.length;
           for (let i = 0; i < total; i++) {
             const { path, nombre } = imagenesOrdenadas[i];
-            setStatus(`Procesando imagen ${i + 1} de ${total}: ${nombre}`, 'busy');
+            window.setStatus(`Procesando imagen ${i + 1} de ${total}: ${nombre}`, 'busy');
             await new Promise(r => setTimeout(r, 0));
             const buffer = await zipPDFGlobal.files[path].async('arraybuffer');
             const esPNG  = /\.png$/i.test(nombre);
@@ -616,13 +632,13 @@
           }
           const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
           const nombreFinal  = !isNaN(folioInicial) ? `${folioInicial}_${folioInicial + total - 1}.pdf` : 'imagenes.pdf';
-          setStatus('Guardando PDF...', 'busy');
+          window.setStatus('Guardando PDF...', 'busy');
           const bytes = await pdfDoc.save();
           const a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
           a.download = nombreFinal; a.click();
-          setStatus(`PDF generado: ${nombreFinal} · ${total} páginas`, 'ok');
-        } catch (err) { setStatus('Error al generar PDF: ' + err.message, 'err'); }
+          window.setStatus(`PDF generado: ${nombreFinal} · ${total} páginas`, 'ok');
+        } catch (err) { window.setStatus('Error al generar PDF: ' + err.message, 'err'); }
       }
 
       window.cargarZipParaPDF = cargarZipParaPDF;
@@ -630,17 +646,14 @@
       mostrarVistaPrevia(); actualizarBadgeZip2PDF();
     </script>
 
+
+
     <!-- ══ Unir PDFs ══ -->
+
     <script type="module">
       import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
 
       let archivosPDF = [];
-
-      function setStatus(msg, type = '') {
-        const el = document.getElementById('status');
-        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
-        el.className = 'topbar-status' + (type ? ' ' + type : '');
-      }
 
       function actualizarPdfBadge() {
         const badge = document.getElementById('pdfBadge');
@@ -676,10 +689,19 @@
         mostrarListaPDFs();
       }
 
+
       function PDFUnidoName(totalPaginas) {
-        const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
+        const folioInicial = parseInt(document.getElementById('NumerodefolioUnirpdf').value, 10);
         if (isNaN(folioInicial)) return 'PDF_Unido.pdf';
-        return folioInicial + '_' + (folioInicial + Math.floor(totalPaginas / 2) - 1) + '.pdf';
+
+        // Folio inicial con 3 dígitos
+        const folioInicialStr = String(folioInicial).padStart(3, '0');
+
+        // Calcular folio final
+        const folioFinal = folioInicial + Math.floor(totalPaginas / 2) - 1;
+        const folioFinalStr = String(folioFinal).padStart(3, '0');
+
+        return folioInicialStr + '_' + folioFinalStr + '.pdf';
       }
 
       async function cargarPDFs() {
@@ -687,16 +709,19 @@
         fi.onchange = () => {
           archivosPDF = Array.from(fi.files).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
           mostrarListaPDFs();
-          setStatus(`${archivosPDF.length} archivo(s) PDF seleccionado(s).`, 'ok');
+          window.setStatus(`${archivosPDF.length} archivo(s) PDF seleccionado(s).`, 'ok');
         };
         fi.click();
       }
 
       async function unirPDFs() {
-        if (archivosPDF.length === 0) { setStatus('Selecciona archivos PDF primero.', 'err'); return; }
-        const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
-        if (isNaN(folioInicial)) { setStatus('Número de folio inválido.', 'err'); return; }
+        if (archivosPDF.length === 0) { window.setStatus('Selecciona archivos PDF primero.', 'err'); return; }
+        const folioInicial = parseInt(document.getElementById('NumerodefolioUnirpdf').value, 10);
+        if (isNaN(folioInicial)) { window.setStatus('Número de folio inválido.', 'err'); return; }
         try {
+
+          window.setStatus('UnirPDFs iniciado', 'busy'); 
+
           const mergedPdf = await PDFDocument.create();
           let totalPaginas = 0;
           for (const file of archivosPDF) {
@@ -709,7 +734,7 @@
             for (const idx of pdf.getPageIndices()) {
               const [p] = await mergedPdf.copyPages(pdf, [idx]);
               mergedPdf.addPage(p); paginaActual++;
-              setStatus(`Procesando página ${paginaActual} de ${totalPaginas}...`, 'busy');
+              window.setStatus(`Procesando página ${paginaActual} de ${totalPaginas}...`, 'busy');
               await new Promise(r => setTimeout(r, 0));
             }
           }
@@ -718,28 +743,26 @@
           const a = document.createElement('a');
           a.href = URL.createObjectURL(new Blob([mergedBytes], { type: 'application/pdf' }));
           a.download = nombreFinal; a.click();
-          setStatus('PDF generado: ' + nombreFinal, 'ok');
-        } catch (err) { setStatus('Error al unir PDFs: ' + err.message, 'err'); }
+          window.setStatus('PDF generado: ' + nombreFinal, 'ok');
+        } catch (err) { window.setStatus('Error al unir PDFs: ' + err.message, 'err'); }
       }
 
       window.cargarPDFs = cargarPDFs;
       window.unirPDFs   = unirPDFs;
       mostrarListaPDFs();
+
     </script>
 
+
+
     <!-- ══ Dividir PDF ══ -->
+
     <script type="module">
       import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
 
       let pdfSrcDoc       = null;   // PDFDocument original cargado
       let totalPagsSplit  = 0;
       let baseNameSplit   = '';
-
-      function setStatus(msg, type = '') {
-        const el = document.getElementById('status');
-        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
-        el.className = 'topbar-status' + (type ? ' ' + type : '');
-      }
 
       // Devuelve el tamaño de bloque en FOLIOS (el input del usuario)
       function getSplitSize() {
@@ -767,8 +790,8 @@
           const fd = String(folioActual).padStart(3, '0');
           const fh = String(folioHasta).padStart(3, '0');
           const nombre = folioActual === folioHasta
-            ? `${base}_${fd}.pdf`
-            : `${base}_${fd}-${fh}.pdf`;
+          ? `${base}_${fd}.pdf`
+          : `${base}_${fd}-${fh}.pdf`;
 
           bloques.push({ paginaDesde, paginaHasta, folioDesde: folioActual, folioHasta, foliosReales, nombre });
 
@@ -822,7 +845,7 @@
           const meta = document.createElement('span'); meta.className = 'pdf-meta';
           meta.textContent = foliosReales === 1
             ? `folio ${String(folioDesde).padStart(3,'0')}`
-            : `${foliosReales} folios`;
+          : `${foliosReales} folios`;
 
           li.append(num, ico, name, meta);
           lista.appendChild(li);
@@ -842,15 +865,15 @@
           if (!fi.files[0]) return;
           const file = fi.files[0];
           baseNameSplit = file.name.replace(/\.pdf$/i, '');
-          setStatus('Leyendo ' + file.name + '...', 'busy');
+          window.setStatus('Leyendo ' + file.name + '...', 'busy');
           try {
             const bytes   = await file.arrayBuffer();
             pdfSrcDoc     = await PDFDocument.load(bytes);
             totalPagsSplit = pdfSrcDoc.getPageCount();
             mostrarVistaPreviaSplit();
             actualizarSplitBadge();
-            setStatus(`PDF listo · ${totalPagsSplit} páginas · ${Math.ceil(totalPagsSplit / 2)} folios`, 'ok');
-          } catch (err) { setStatus('Error al leer PDF: ' + err.message, 'err'); }
+            window.setStatus(`PDF listo · ${totalPagsSplit} páginas · ${Math.ceil(totalPagsSplit / 2)} folios`, 'ok');
+          } catch (err) { window.setStatus('Error al leer PDF: ' + err.message, 'err'); }
         };
         fi.click();
       }
@@ -861,12 +884,12 @@
         const bloques = calcularBloques(totalPagsSplit, size, baseNameSplit);
         const zip     = new JSZip();
 
-        setStatus(`Dividiendo en ${bloques.length} archivos...`, 'busy');
+        window.setStatus(`Dividiendo en ${bloques.length} archivos...`, 'busy');
 
         try {
           for (let b = 0; b < bloques.length; b++) {
             const { paginaDesde, paginaHasta, nombre } = bloques[b];
-            setStatus(`Generando ${nombre} (${b + 1}/${bloques.length})...`, 'busy');
+            window.setStatus(`Generando ${nombre} (${b + 1}/${bloques.length})...`, 'busy');
             await new Promise(r => setTimeout(r, 0));
 
             const docBloque = await PDFDocument.create();
@@ -881,15 +904,15 @@
             zip.file(nombre, bytesBloque);
           }
 
-          setStatus('Comprimiendo ZIP...', 'busy');
+          window.setStatus('Comprimiendo ZIP...', 'busy');
           const blobZip = await zip.generateAsync({ type: 'blob' });
           const a = document.createElement('a');
           a.href     = URL.createObjectURL(blobZip);
           a.download = `${baseNameSplit}_dividido.zip`;
           a.click();
 
-          setStatus(`Listo · ${bloques.length} PDFs generados en ZIP`, 'ok');
-        } catch (err) { setStatus('Error al dividir PDF: ' + err.message, 'err'); }
+          window.setStatus(`Listo · ${bloques.length} PDFs generados en ZIP`, 'ok');
+        } catch (err) { window.setStatus('Error al dividir PDF: ' + err.message, 'err'); }
       }
 
       window.cargarPDFParaDividir = cargarPDFParaDividir;
