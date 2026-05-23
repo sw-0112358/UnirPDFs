@@ -2,19 +2,11 @@
 <html lang="es">
   <head>
     <meta charset="UTF-8">
-
-    <!-- Manifest -->
     <link rel="manifest" href="manifest.json">
-
-    <!-- Ícono para pestaña del navegador -->
     <link rel="icon" href="icono.jpg" type="image/jpeg">
-
-    <!-- Compatibilidad con iOS (Safari) -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="UnirPDFs">
     <link rel="apple-touch-icon" href="icono.jpg">
-
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Folios — Gestión Documental</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -84,15 +76,11 @@
         align-items: center;
         gap: 0;
       }
-      .logo {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
+      .logo { display: flex; align-items: center; gap: 10px; }
       .logo-icon {
         width: 28px; height: 34px;
         background: var(--red);
-        border-radius: 3px 3px 3px 3px;
+        border-radius: 3px;
         position: relative;
         flex-shrink: 0;
         box-shadow: 2px 2px 0 var(--red-mid);
@@ -110,42 +98,49 @@
         content: '';
         position: absolute;
         inset: 0;
-        background: repeating-linear-gradient(
-          0deg,
-          transparent,
-          transparent 4px,
-          rgba(255,255,255,.15) 4px,
-          rgba(255,255,255,.15) 5px
-        );
+        background: repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,.15) 4px, rgba(255,255,255,.15) 5px);
         border-radius: 2px;
       }
       .logo-text { line-height: 1; }
-      .logo-name {
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        color: var(--text);
-      }
-      .logo-sub {
-        font-size: 10px;
-        font-weight: 400;
-        color: var(--text-dim);
-        letter-spacing: 0.04em;
-        margin-top: 1px;
-      }
-      .topbar-folio {
+      .logo-name { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+      .logo-sub  { font-size: 10px; font-weight: 400; color: var(--text-dim); letter-spacing: 0.04em; margin-top: 1px; }
+      .topbar-folio { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+      .folio-label  { font-size: 11px; font-weight: 500; color: var(--text-dim); letter-spacing: 0.02em; white-space: nowrap; }
+
+      /* ─── Status en topbar ─── */
+      .topbar-status {
         margin-left: auto;
         display: flex;
         align-items: center;
-        gap: 10px;
-      }
-      .folio-label {
+        gap: 8px;
+        font-family: var(--mono);
         font-size: 11px;
         font-weight: 500;
         color: var(--text-dim);
-        letter-spacing: 0.02em;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 5px 12px;
+        max-width: 420px;
+        overflow: hidden;
+        transition: all .2s;
         white-space: nowrap;
+        text-overflow: ellipsis;
       }
+      .topbar-status .status-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: var(--text-lo);
+        flex-shrink: 0;
+        transition: background .2s;
+      }
+      .topbar-status.ok   { color: var(--green); background: var(--green-lo); border-color: #b8dfc4; }
+      .topbar-status.ok   .status-dot { background: var(--green); }
+      .topbar-status.err  { color: var(--red);   background: var(--red-lo);   border-color: var(--red-mid); }
+      .topbar-status.err  .status-dot { background: var(--red); }
+      .topbar-status.busy { color: var(--blue);  background: var(--blue-lo);  border-color: #b8ccea; }
+      .topbar-status.busy .status-dot { background: var(--blue); animation: blink 1s ease-in-out infinite; }
+
       input[type="number"] {
         font-family: var(--mono);
         font-size: 13px;
@@ -169,159 +164,44 @@
       input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
 
       /* ─── Layout ─── */
-      .main {
-        width: 100%;
-        max-width: 680px;
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-      }
+      .main { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 20px; }
 
       /* ─── Section header ─── */
       .section-title {
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-dim);
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--text-dim);
+        margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
       }
-      .section-title::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--border);
-      }
+      .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-      /* ─── Paper card ─── */
+      /* ─── Card ─── */
       .card {
-        background: var(--paper);
-        border: 1px solid var(--border);
-        border-radius: var(--r);
-        box-shadow: var(--shadow-doc);
-        overflow: hidden;
-        animation: cardIn .3s ease both;
+        background: var(--paper); border: 1px solid var(--border);
+        border-radius: var(--r); box-shadow: var(--shadow-doc);
+        overflow: hidden; animation: cardIn .3s ease both;
       }
-      @keyframes cardIn {
-        from { opacity: 0; transform: translateY(8px); }
-        to   { opacity: 1; transform: translateY(0); }
-      }
-      .card:nth-child(2) { animation-delay: .06s; }
-      .card:nth-child(3) { animation-delay: .12s; }
+      @keyframes cardIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
       .card-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; gap: 12px;
+        padding: 14px 20px; border-bottom: 1px solid var(--border);
         background: var(--surface);
       }
-      .card-icon {
-        width: 32px; height: 32px;
-        border-radius: 6px;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 16px;
-        flex-shrink: 0;
-      }
+      .card-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
       .card-icon.red  { background: var(--red-lo); }
       .card-icon.blue { background: var(--blue-lo); }
-
-      .card-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text);
-        letter-spacing: -0.01em;
-      }
-      .card-desc {
-        font-size: 12px;
-        color: var(--text-dim);
-        font-weight: 400;
-        margin-top: 1px;
-      }
+      .card-title { font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+      .card-desc  { font-size: 12px; color: var(--text-dim); font-weight: 400; margin-top: 1px; }
       .card-badge {
-        margin-left: auto;
-        font-family: var(--mono);
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--text-mid);
-        background: var(--paper);
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        padding: 3px 10px;
-        white-space: nowrap;
+        margin-left: auto; font-family: var(--mono); font-size: 11px; font-weight: 500;
+        color: var(--text-mid); background: var(--paper); border: 1px solid var(--border);
+        border-radius: 20px; padding: 3px 10px; white-space: nowrap;
       }
-      .card-badge.active {
-        color: var(--red);
-        border-color: var(--red-mid);
-        background: var(--red-lo);
-      }
-
+      .card-badge.active { color: var(--red); border-color: var(--red-mid); background: var(--red-lo); }
       .card-body { padding: 20px; }
 
-      /* ─── Buttons ─── */
-      .btn-row {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-      .btn {
-        font-family: var(--sans);
-        font-size: 13px;
-        font-weight: 500;
-        padding: 9px 16px;
-        border-radius: var(--r);
-        border: 1.5px solid;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        transition: all .14s;
-        letter-spacing: -0.01em;
-        white-space: nowrap;
-      }
-      .btn:active { transform: scale(0.97); }
-
-      .btn-outline {
-        color: var(--text-mid);
-        border-color: var(--border);
-        background: var(--paper);
-      }
-      .btn-outline:hover {
-        border-color: var(--border-hi);
-        color: var(--text);
-        background: var(--surface);
-        box-shadow: 0 1px 4px rgba(0,0,0,.06);
-      }
-
-      .btn-primary {
-        color: #fff;
-        background: var(--red);
-        border-color: var(--red);
-      }
-      .btn-primary:hover {
-        background: var(--red-hi);
-        border-color: var(--red-hi);
-        box-shadow: 0 2px 8px rgba(208,41,26,.25);
-      }
-      .btn-primary:disabled {
-        opacity: .38;
-        cursor: not-allowed;
-        box-shadow: none;
-      }
-
-      /* ─── Divider ─── */
-      .divider {
-        height: 1px;
-        background: var(--border);
-        margin: 16px 0;
-      }
-
-      /* ─── Status bar ─── */
-      .statusbar {
+      /* ─── Split config row ─── */
+      .split-config {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -329,19 +209,53 @@
         border: 1px solid var(--border);
         border-radius: var(--r);
         padding: 10px 14px;
-        font-family: var(--mono);
+        margin-bottom: 14px;
+      }
+      .split-config label {
         font-size: 12px;
+        font-weight: 500;
         color: var(--text-mid);
-        min-height: 42px;
-        transition: all .2s;
+        white-space: nowrap;
       }
-      .status-dot {
-        width: 7px; height: 7px;
-        border-radius: 50%;
-        background: var(--text-lo);
-        flex-shrink: 0;
-        transition: background .2s;
+      .split-config input[type="number"] {
+        width: 80px;
+        font-size: 13px;
+        padding: 5px 8px;
       }
+      .split-config-hint {
+        font-size: 11px;
+        color: var(--text-dim);
+        font-family: var(--mono);
+        margin-left: auto;
+      }
+
+      /* ─── Buttons ─── */
+      .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+      .btn {
+        font-family: var(--sans); font-size: 13px; font-weight: 500;
+        padding: 9px 16px; border-radius: var(--r); border: 1.5px solid;
+        cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+        transition: all .14s; letter-spacing: -0.01em; white-space: nowrap;
+      }
+      .btn:active { transform: scale(0.97); }
+      .btn-outline { color: var(--text-mid); border-color: var(--border); background: var(--paper); }
+      .btn-outline:hover { border-color: var(--border-hi); color: var(--text); background: var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.06); }
+      .btn-primary { color: #fff; background: var(--red); border-color: var(--red); }
+      .btn-primary:hover { background: var(--red-hi); border-color: var(--red-hi); box-shadow: 0 2px 8px rgba(208,41,26,.25); }
+      .btn-primary:disabled { opacity: .38; cursor: not-allowed; box-shadow: none; }
+
+      /* ─── Divider ─── */
+      .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+      /* ─── Status bar ─── */
+      .statusbar {
+        display: flex; align-items: center; gap: 10px;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: var(--r); padding: 10px 14px;
+        font-family: var(--mono); font-size: 12px; color: var(--text-mid);
+        min-height: 42px; transition: all .2s;
+      }
+      .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-lo); flex-shrink: 0; transition: background .2s; }
       .statusbar.ok   { color: var(--green); background: var(--green-lo); border-color: #b8dfc4; }
       .statusbar.ok   .status-dot { background: var(--green); }
       .statusbar.err  { color: var(--red); background: var(--red-lo); border-color: var(--red-mid); }
@@ -350,85 +264,38 @@
       .statusbar.busy .status-dot { background: var(--blue); animation: blink 1s ease-in-out infinite; }
       @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
 
-      /* ─── PDF list ─── */
-      .pdf-list {
-        list-style: none;
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-        max-height: 220px;
-        overflow-y: auto;
-        padding-right: 2px;
+      /* ─── Lists ─── */
+      .pdf-list, .img-list {
+        list-style: none; display: flex; flex-direction: column;
+        gap: 5px; max-height: 220px; overflow-y: auto; padding-right: 2px;
       }
-      .pdf-list::-webkit-scrollbar { width: 4px; }
-      .pdf-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+      .pdf-list::-webkit-scrollbar, .img-list::-webkit-scrollbar { width: 4px; }
+      .pdf-list::-webkit-scrollbar-thumb, .img-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
-      .pdf-empty {
-        font-size: 13px;
-        color: var(--text-dim);
-        text-align: center;
-        padding: 20px 0;
-        font-style: italic;
-        font-weight: 300;
-      }
+      .pdf-empty { font-size: 13px; color: var(--text-dim); text-align: center; padding: 20px 0; font-style: italic; font-weight: 300; }
 
       .pdf-item {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 5px;
-        padding: 8px 10px;
+        display: flex; align-items: center; gap: 10px;
+        background: var(--surface); border: 1px solid var(--border);
+        border-radius: 5px; padding: 8px 10px;
         transition: border-color .12s, box-shadow .12s;
       }
-      .pdf-item:hover {
-        border-color: var(--border-hi);
-        box-shadow: 0 1px 4px rgba(0,0,0,.05);
-      }
-      .pdf-num {
-        font-family: var(--mono);
-        font-size: 10px;
-        color: var(--text-lo);
-        width: 18px;
-        text-align: right;
-        flex-shrink: 0;
-      }
-      .pdf-ico {
-        font-size: 14px;
-        flex-shrink: 0;
-      }
-      .pdf-name {
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text);
-        flex: 1;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+      .pdf-item:hover { border-color: var(--border-hi); box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+      .pdf-num  { font-family: var(--mono); font-size: 10px; color: var(--text-lo); width: 18px; text-align: right; flex-shrink: 0; }
+      .pdf-ico  { font-size: 14px; flex-shrink: 0; }
+      .pdf-name { font-size: 12px; font-weight: 500; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .pdf-meta { font-family: var(--mono); font-size: 10px; color: var(--text-dim); flex-shrink: 0; }
+
       .move-btn {
-        width: 22px; height: 22px;
-        border: 1px solid var(--border);
-        border-radius: 4px;
-        background: var(--paper);
-        color: var(--text-dim);
-        font-size: 11px;
-        cursor: pointer;
-        display: flex; align-items: center; justify-content: center;
-        transition: all .1s;
-        padding: 0;
+        width: 22px; height: 22px; border: 1px solid var(--border);
+        border-radius: 4px; background: var(--paper); color: var(--text-dim);
+        font-size: 11px; cursor: pointer; display: flex; align-items: center;
+        justify-content: center; transition: all .1s; padding: 0;
       }
       .move-btn:hover { background: var(--border); color: var(--text); }
 
       /* ─── Footer ─── */
-      .footer {
-        margin-top: 48px;
-        font-size: 11px;
-        color: var(--text-lo);
-        letter-spacing: 0.04em;
-        text-align: center;
-      }
+      .footer { margin-top: 48px; font-size: 11px; color: var(--text-lo); letter-spacing: 0.04em; text-align: center; }
     </style>
   </head>
   <body>
@@ -443,16 +310,16 @@
             <div class="logo-sub">Gestión Documental</div>
           </div>
         </div>
-        <div class="topbar-folio">
-          <span class="folio-label">Folio inicial</span>
-          <input type="number" id="Numerodefolio" placeholder="N°" min="1">
+        <div class="topbar-status" id="status">
+          <div class="status-dot"></div>
+          <span>Listo</span>
         </div>
       </div>
     </div>
 
     <div class="main">
 
-      <!-- ZIP Section -->
+      <!-- ZIP Renombre -->
       <div>
         <div class="section-title">Imágenes ZIP</div>
         <div class="card">
@@ -465,19 +332,44 @@
             <div class="card-badge" id="zipBadge">Sin cargar</div>
           </div>
           <div class="card-body">
+            <div class="split-config" style="margin-bottom:14px;">
+              <label for="Numerodefolio" style="font-size:12px;font-weight:500;color:var(--text-mid);white-space:nowrap;">Folio inicial</label>
+              <input type="number" id="Numerodefolio" placeholder="N°" min="1" style="width:100px;">
+            </div>
             <div class="btn-row">
-              <button class="btn btn-outline" onclick="cargarZip()">
-                📂 Cargar ZIP
-              </button>
-              <button class="btn btn-primary" id="btnStart" onclick="start()" disabled>
-                ▶ Procesar y descargar
-              </button>
+              <button class="btn btn-outline" onclick="cargarZip()">📂 Cargar ZIP</button>
+              <button class="btn btn-primary" id="btnStart" onclick="start()" disabled>▶ Procesar y descargar</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- PDF Section -->
+      <!-- ZIP → PDF -->
+      <div>
+        <div class="section-title">ZIP a PDF</div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon red">🖼</div>
+            <div>
+              <div class="card-title">Imágenes ZIP → PDF</div>
+              <div class="card-desc">Convierte imágenes del ZIP a PDF · Resolución y calidad originales</div>
+            </div>
+            <div class="card-badge" id="zip2pdfBadge">Sin cargar</div>
+          </div>
+          <div class="card-body">
+            <ul class="img-list" id="imgPreviewList">
+              <li class="pdf-empty">Carga un ZIP con imágenes JPG o PNG</li>
+            </ul>
+            <div class="divider"></div>
+            <div class="btn-row">
+              <button class="btn btn-outline" onclick="cargarZipParaPDF()">📂 Cargar ZIP</button>
+              <button class="btn btn-primary" id="btnZip2PDF" onclick="convertirZipAPDF()" disabled>📄 Convertir a PDF</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Unir PDFs -->
       <div>
         <div class="section-title">Documentos PDF</div>
         <div class="card">
@@ -495,21 +387,45 @@
             </ul>
             <div class="divider"></div>
             <div class="btn-row">
-              <button class="btn btn-outline" onclick="cargarPDFs()">
-                📑 Seleccionar PDFs
-              </button>
-              <button class="btn btn-primary" id="btnUnir" onclick="unirPDFs()" disabled>
-                📩 Unir y descargar
-              </button>
+              <button class="btn btn-outline" onclick="cargarPDFs()">📑 Seleccionar PDFs</button>
+              <button class="btn btn-primary" id="btnUnir" onclick="unirPDFs()" disabled>📩 Unir y descargar</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Status -->
-      <div class="statusbar" id="status">
-        <div class="status-dot"></div>
-        <span>✅...</span>
+      <!-- Dividir PDF -->
+      <div>
+        <div class="section-title">Dividir PDF</div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon red">✂️</div>
+            <div>
+              <div class="card-title">Dividir PDF por folios</div>
+              <div class="card-desc">Genera PDFs con N folios cada uno (2 págs/folio) · Sin pérdida de calidad</div>
+            </div>
+            <div class="card-badge" id="splitBadge">Sin cargar</div>
+          </div>
+          <div class="card-body">
+
+            <!-- Config: folios por bloque -->
+            <div class="split-config">
+              <label for="splitSize">Folios por PDF</label>
+              <input type="number" id="splitSize" value="10" min="1" max="9999"
+                     oninput="recalcularSplit()">
+              <span class="split-config-hint" id="splitHint">—</span>
+            </div>
+
+            <ul class="pdf-list" id="splitPreviewList">
+              <li class="pdf-empty">Carga un PDF para ver la distribución</li>
+            </ul>
+            <div class="divider"></div>
+            <div class="btn-row">
+              <button class="btn btn-outline" onclick="cargarPDFParaDividir()">📑 Cargar PDF</button>
+              <button class="btn btn-primary" id="btnSplit" onclick="dividirPDF()" disabled>✂️ Dividir y descargar ZIP</button>
+            </div>
+          </div>
+        </div>
       </div>
 
     </div>
@@ -517,7 +433,7 @@
     <div class="footer">Folios · Sistema de Gestión Documental</div>
 
 
-    <!-- ══ ZIP Script ══ -->
+    <!-- ══ ZIP Renombre ══ -->
     <script>
       let trabajando = false;
       const FoliosFrente = [];
@@ -527,19 +443,14 @@
       function setStatus(msg, type = '') {
         const el = document.getElementById('status');
         el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
-        el.className = 'statusbar' + (type ? ' ' + type : '');
+        el.className = 'topbar-status' + (type ? ' ' + type : '');
       }
 
       function actualizarZipBadge() {
         const total = FoliosFrente.length + FoliosVuelto.length;
         const badge = document.getElementById('zipBadge');
-        if (total > 0) {
-          badge.textContent = `${total} imágenes`;
-          badge.className = 'card-badge active';
-        } else {
-          badge.textContent = 'Sin cargar';
-          badge.className = 'card-badge';
-        }
+        if (total > 0) { badge.textContent = `${total} imágenes`; badge.className = 'card-badge active'; }
+        else           { badge.textContent = 'Sin cargar';         badge.className = 'card-badge'; }
         document.getElementById('btnStart').disabled = total === 0;
       }
 
@@ -561,9 +472,7 @@
           setStatus('Leyendo ' + file.name + '...', 'busy');
           const zip = await JSZip.loadAsync(file);
           zipGlobal = zip;
-          FoliosFrente.length = 0;
-          FoliosVuelto.length = 0;
-
+          FoliosFrente.length = 0; FoliosVuelto.length = 0;
           let count = 0;
           for (const filename of Object.keys(zip.files)) {
             if (filename.endsWith('.jpg')) {
@@ -575,14 +484,10 @@
               }
             }
           }
-
           trabajando = false;
           actualizarZipBadge();
           setStatus(`ZIP listo · ${count} JPG · Frente: ${FoliosFrente.length} · Vuelto: ${FoliosVuelto.length}`, 'ok');
-        } catch (err) {
-          trabajando = false;
-          setStatus('Error al cargar ZIP: ' + (err.message || err), 'err');
-        }
+        } catch (err) { trabajando = false; setStatus('Error al cargar ZIP: ' + (err.message || err), 'err'); }
       }
 
       function FinalFileName(folioInicial, totalF, totalV) {
@@ -594,11 +499,9 @@
         if (!zipGlobal) { setStatus('Carga un ZIP primero.', 'err'); return; }
         const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
         if (isNaN(folioInicial)) { setStatus('Número de folio inválido.', 'err'); return; }
-
         try {
           const nuevoZip = new JSZip();
           let cF = folioInicial, cV = folioInicial;
-
           for (const filename of FoliosFrente) {
             const contenido = await zipGlobal.files[filename].async('blob');
             const nombre = (cF++) + 'F.jpg';
@@ -611,26 +514,123 @@
             nuevoZip.file(nombre, contenido);
             setStatus('Procesando: ' + nombre, 'busy');
           }
-
           const nombreFinal = FinalFileName(folioInicial, FoliosFrente.length, FoliosVuelto.length);
           const blobFinal = await nuevoZip.generateAsync({ type: 'blob' });
           const a = document.createElement('a');
-          a.href = URL.createObjectURL(blobFinal);
-          a.download = nombreFinal;
-          a.click();
+          a.href = URL.createObjectURL(blobFinal); a.download = nombreFinal; a.click();
           setStatus('ZIP generado: ' + nombreFinal, 'ok');
-        } catch (err) {
-          setStatus('Error en procesamiento: ' + err.message, 'err');
-        }
+        } catch (err) { setStatus('Error en procesamiento: ' + err.message, 'err'); }
       }
 
-      window.onload = () => {
-        document.getElementById('Numerodefolio').value = 1;
-        actualizarZipBadge();
-      };
+      window.onload = () => { document.getElementById('Numerodefolio').value = 1; actualizarZipBadge(); };
     </script>
 
-    <!-- ══ PDF Module ══ -->
+    <!-- ══ ZIP → PDF ══ -->
+    <script type="module">
+      import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
+
+      function sortAlphanumeric(a, b) { return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }); }
+      function esImagen(n) { return /\.(jpe?g|png)$/i.test(n); }
+      function obtenerDimensiones(buffer, mimeType) {
+        return new Promise((resolve, reject) => {
+          const blob = new Blob([buffer], { type: mimeType });
+          const url  = URL.createObjectURL(blob);
+          const img  = new Image();
+          img.onload  = () => { URL.revokeObjectURL(url); resolve({ w: img.naturalWidth, h: img.naturalHeight }); };
+          img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('No se pudo leer imagen')); };
+          img.src = url;
+        });
+      }
+
+      let zipPDFGlobal = null;
+      let imagenesOrdenadas = [];
+
+      function setStatus(msg, type = '') {
+        const el = document.getElementById('status');
+        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
+        el.className = 'topbar-status' + (type ? ' ' + type : '');
+      }
+
+      function actualizarBadgeZip2PDF() {
+        const badge = document.getElementById('zip2pdfBadge');
+        const n = imagenesOrdenadas.length;
+        if (n > 0) { badge.textContent = n + ' imagen' + (n !== 1 ? 'es' : ''); badge.className = 'card-badge active'; }
+        else       { badge.textContent = 'Sin cargar'; badge.className = 'card-badge'; }
+        document.getElementById('btnZip2PDF').disabled = n === 0;
+      }
+
+      function mostrarVistaPrevia() {
+        const lista = document.getElementById('imgPreviewList');
+        lista.innerHTML = '';
+        if (imagenesOrdenadas.length === 0) {
+          const li = document.createElement('li'); li.className = 'pdf-empty';
+          li.textContent = 'Carga un ZIP con imágenes JPG o PNG'; lista.appendChild(li); return;
+        }
+        imagenesOrdenadas.forEach(({ nombre }, i) => {
+          const li = document.createElement('li'); li.className = 'pdf-item';
+          const num = document.createElement('span'); num.className = 'pdf-num'; num.textContent = String(i + 1).padStart(2, '0');
+          const ico = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = /\.png$/i.test(nombre) ? '🖼' : '📷';
+          const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = nombre;
+          li.append(num, ico, name); lista.appendChild(li);
+        });
+      }
+
+      async function cargarZipParaPDF() {
+        return new Promise((resolve) => {
+          const fi = document.createElement('input'); fi.type = 'file'; fi.accept = '.zip';
+          fi.onchange = async () => {
+            if (!fi.files[0]) return;
+            const file = fi.files[0];
+            setStatus('Leyendo ' + file.name + '...', 'busy');
+            try {
+              const zip = await JSZip.loadAsync(file);
+              zipPDFGlobal = zip;
+              const paths = Object.keys(zip.files).filter(p => esImagen(p) && !zip.files[p].dir && !p.startsWith('__MACOSX'));
+              paths.sort((a, b) => sortAlphanumeric(a.split('/').pop(), b.split('/').pop()));
+              imagenesOrdenadas = paths.map(p => ({ path: p, nombre: p.split('/').pop() }));
+              mostrarVistaPrevia(); actualizarBadgeZip2PDF();
+              setStatus(`ZIP listo · ${imagenesOrdenadas.length} imágenes ordenadas`, 'ok');
+              resolve();
+            } catch (err) { setStatus('Error al leer ZIP: ' + err.message, 'err'); resolve(); }
+          };
+          fi.click();
+        });
+      }
+
+      async function convertirZipAPDF() {
+        if (!zipPDFGlobal || imagenesOrdenadas.length === 0) { setStatus('Carga un ZIP con imágenes primero.', 'err'); return; }
+        setStatus('Creando PDF...', 'busy');
+        try {
+          const pdfDoc = await PDFDocument.create();
+          const total  = imagenesOrdenadas.length;
+          for (let i = 0; i < total; i++) {
+            const { path, nombre } = imagenesOrdenadas[i];
+            setStatus(`Procesando imagen ${i + 1} de ${total}: ${nombre}`, 'busy');
+            await new Promise(r => setTimeout(r, 0));
+            const buffer = await zipPDFGlobal.files[path].async('arraybuffer');
+            const esPNG  = /\.png$/i.test(nombre);
+            const { w, h } = await obtenerDimensiones(buffer, esPNG ? 'image/png' : 'image/jpeg');
+            const pdfImg = esPNG ? await pdfDoc.embedPng(buffer) : await pdfDoc.embedJpg(buffer);
+            const page = pdfDoc.addPage([w, h]);
+            page.drawImage(pdfImg, { x: 0, y: 0, width: w, height: h });
+          }
+          const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
+          const nombreFinal  = !isNaN(folioInicial) ? `${folioInicial}_${folioInicial + total - 1}.pdf` : 'imagenes.pdf';
+          setStatus('Guardando PDF...', 'busy');
+          const bytes = await pdfDoc.save();
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+          a.download = nombreFinal; a.click();
+          setStatus(`PDF generado: ${nombreFinal} · ${total} páginas`, 'ok');
+        } catch (err) { setStatus('Error al generar PDF: ' + err.message, 'err'); }
+      }
+
+      window.cargarZipParaPDF = cargarZipParaPDF;
+      window.convertirZipAPDF = convertirZipAPDF;
+      mostrarVistaPrevia(); actualizarBadgeZip2PDF();
+    </script>
+
+    <!-- ══ Unir PDFs ══ -->
     <script type="module">
       import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
 
@@ -639,62 +639,33 @@
       function setStatus(msg, type = '') {
         const el = document.getElementById('status');
         el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
-        el.className = 'statusbar' + (type ? ' ' + type : '');
+        el.className = 'topbar-status' + (type ? ' ' + type : '');
       }
 
       function actualizarPdfBadge() {
         const badge = document.getElementById('pdfBadge');
-        if (archivosPDF.length > 0) {
-          badge.textContent = archivosPDF.length + ' archivo' + (archivosPDF.length > 1 ? 's' : '');
-          badge.className = 'card-badge active';
-        } else {
-          badge.textContent = 'Sin cargar';
-          badge.className = 'card-badge';
-        }
+        if (archivosPDF.length > 0) { badge.textContent = archivosPDF.length + ' archivo' + (archivosPDF.length > 1 ? 's' : ''); badge.className = 'card-badge active'; }
+        else { badge.textContent = 'Sin cargar'; badge.className = 'card-badge'; }
         document.getElementById('btnUnir').disabled = archivosPDF.length === 0;
       }
 
       function mostrarListaPDFs() {
         const lista = document.getElementById('pdfList');
         lista.innerHTML = '';
-
         if (archivosPDF.length === 0) {
-          const li = document.createElement('li');
-          li.className = 'pdf-empty';
-          li.textContent = 'Selecciona archivos PDF para comenzar';
-          lista.appendChild(li);
-          actualizarPdfBadge();
-          return;
+          const li = document.createElement('li'); li.className = 'pdf-empty';
+          li.textContent = 'Selecciona archivos PDF para comenzar'; lista.appendChild(li);
+          actualizarPdfBadge(); return;
         }
-
         archivosPDF.forEach((file, index) => {
-          const li = document.createElement('li');
-          li.className = 'pdf-item';
-
-          const num = document.createElement('span');
-          num.className = 'pdf-num';
-          num.textContent = String(index + 1).padStart(2, '0');
-
-          const ico = document.createElement('span');
-          ico.className = 'pdf-ico';
-          ico.textContent = '📄';
-
-          const name = document.createElement('span');
-          name.className = 'pdf-name';
-          name.textContent = file.name;
-
-          const up = document.createElement('button');
-          up.className = 'move-btn'; up.textContent = '↑';
-          up.onclick = () => moverArchivo(index, -1);
-
-          const dn = document.createElement('button');
-          dn.className = 'move-btn'; dn.textContent = '↓';
-          dn.onclick = () => moverArchivo(index, 1);
-
-          li.append(num, ico, name, up, dn);
-          lista.appendChild(li);
+          const li = document.createElement('li'); li.className = 'pdf-item';
+          const num = document.createElement('span'); num.className = 'pdf-num'; num.textContent = String(index + 1).padStart(2, '0');
+          const ico = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = '📄';
+          const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = file.name;
+          const up = document.createElement('button'); up.className = 'move-btn'; up.textContent = '↑'; up.onclick = () => moverArchivo(index, -1);
+          const dn = document.createElement('button'); dn.className = 'move-btn'; dn.textContent = '↓'; dn.onclick = () => moverArchivo(index, 1);
+          li.append(num, ico, name, up, dn); lista.appendChild(li);
         });
-
         actualizarPdfBadge();
       }
 
@@ -708,17 +679,13 @@
       function PDFUnidoName(totalPaginas) {
         const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
         if (isNaN(folioInicial)) return 'PDF_Unido.pdf';
-        const folioFinal = folioInicial + Math.floor(totalPaginas / 2) - 1;
-        return folioInicial + '_' + folioFinal + '.pdf';
+        return folioInicial + '_' + (folioInicial + Math.floor(totalPaginas / 2) - 1) + '.pdf';
       }
 
       async function cargarPDFs() {
-        const fi = document.createElement('input');
-        fi.type = 'file'; fi.accept = '.pdf'; fi.multiple = true;
+        const fi = document.createElement('input'); fi.type = 'file'; fi.accept = '.pdf'; fi.multiple = true;
         fi.onchange = () => {
-          archivosPDF = Array.from(fi.files).sort((a, b) =>
-                                                  a.name.localeCompare(b.name, undefined, { numeric: true })
-                                                 );
+          archivosPDF = Array.from(fi.files).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
           mostrarListaPDFs();
           setStatus(`${archivosPDF.length} archivo(s) PDF seleccionado(s).`, 'ok');
         };
@@ -729,45 +696,207 @@
         if (archivosPDF.length === 0) { setStatus('Selecciona archivos PDF primero.', 'err'); return; }
         const folioInicial = parseInt(document.getElementById('Numerodefolio').value, 10);
         if (isNaN(folioInicial)) { setStatus('Número de folio inválido.', 'err'); return; }
-
         try {
           const mergedPdf = await PDFDocument.create();
           let totalPaginas = 0;
           for (const file of archivosPDF) {
-            const bytes = await file.arrayBuffer();
-            const pdf = await PDFDocument.load(bytes);
+            const pdf = await PDFDocument.load(await file.arrayBuffer());
             totalPaginas += pdf.getPageCount();
           }
-
           let paginaActual = 0;
           for (const file of archivosPDF) {
-            const bytes = await file.arrayBuffer();
-            const pdf = await PDFDocument.load(bytes);
+            const pdf = await PDFDocument.load(await file.arrayBuffer());
             for (const idx of pdf.getPageIndices()) {
               const [p] = await mergedPdf.copyPages(pdf, [idx]);
-              mergedPdf.addPage(p);
-              paginaActual++;
+              mergedPdf.addPage(p); paginaActual++;
               setStatus(`Procesando página ${paginaActual} de ${totalPaginas}...`, 'busy');
               await new Promise(r => setTimeout(r, 0));
             }
           }
-
           const nombreFinal = PDFUnidoName(totalPaginas);
           const mergedBytes = await mergedPdf.save();
-          const blob = new Blob([mergedBytes], { type: 'application/pdf' });
           const a = document.createElement('a');
-          a.href = URL.createObjectURL(blob);
-          a.download = nombreFinal;
-          a.click();
+          a.href = URL.createObjectURL(new Blob([mergedBytes], { type: 'application/pdf' }));
+          a.download = nombreFinal; a.click();
           setStatus('PDF generado: ' + nombreFinal, 'ok');
-        } catch (err) {
-          setStatus('Error al unir PDFs: ' + err.message, 'err');
-        }
+        } catch (err) { setStatus('Error al unir PDFs: ' + err.message, 'err'); }
       }
 
       window.cargarPDFs = cargarPDFs;
-      window.unirPDFs = unirPDFs;
+      window.unirPDFs   = unirPDFs;
       mostrarListaPDFs();
+    </script>
+
+    <!-- ══ Dividir PDF ══ -->
+    <script type="module">
+      import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
+
+      let pdfSrcDoc       = null;   // PDFDocument original cargado
+      let totalPagsSplit  = 0;
+      let baseNameSplit   = '';
+
+      function setStatus(msg, type = '') {
+        const el = document.getElementById('status');
+        el.innerHTML = `<div class="status-dot"></div><span>${msg}</span>`;
+        el.className = 'topbar-status' + (type ? ' ' + type : '');
+      }
+
+      // Devuelve el tamaño de bloque en FOLIOS (el input del usuario)
+      function getSplitSize() {
+        const v = parseInt(document.getElementById('splitSize').value, 10);
+        return (isNaN(v) || v < 1) ? 1 : v;
+      }
+
+      // Genera la lista de bloques en términos de FOLIOS y PÁGINAS.
+      // folioInicio: folio de inicio de este bloque (base 1, en folios)
+      // paginaDesde: página real base-1 dentro del PDF
+      // Cada folio = 2 páginas. El último bloque puede tener menos páginas.
+      function calcularBloques(totalPags, foliosPorBloque, base) {
+        const bloques = [];
+        let paginaDesde = 1;       // página PDF base-1
+        let folioActual = 1;       // folio correlativo base-1
+
+        while (paginaDesde <= totalPags) {
+          const pagsPorBloque = foliosPorBloque * 2;          // páginas que queremos
+          const paginaHasta   = Math.min(paginaDesde + pagsPorBloque - 1, totalPags);
+          const paginasReales = paginaHasta - paginaDesde + 1;
+          const foliosReales  = Math.ceil(paginasReales / 2); // folios reales (último puede ser impar)
+
+          const folioHasta = folioActual + foliosReales - 1;
+
+          const fd = String(folioActual).padStart(3, '0');
+          const fh = String(folioHasta).padStart(3, '0');
+          const nombre = folioActual === folioHasta
+            ? `${base}_${fd}.pdf`
+            : `${base}_${fd}-${fh}.pdf`;
+
+          bloques.push({ paginaDesde, paginaHasta, folioDesde: folioActual, folioHasta, foliosReales, nombre });
+
+          paginaDesde = paginaHasta + 1;
+          folioActual = folioHasta + 1;
+        }
+        return bloques;
+      }
+
+      function actualizarSplitBadge() {
+        const badge = document.getElementById('splitBadge');
+        if (totalPagsSplit > 0) {
+          const bloques = calcularBloques(totalPagsSplit, getSplitSize(), baseNameSplit);
+          const totalFolios = Math.ceil(totalPagsSplit / 2);
+          badge.textContent = `${totalFolios} folios · ${bloques.length} PDF${bloques.length !== 1 ? 's' : ''}`;
+          badge.className = 'card-badge active';
+        } else {
+          badge.textContent = 'Sin cargar';
+          badge.className = 'card-badge';
+        }
+        document.getElementById('btnSplit').disabled = totalPagsSplit === 0;
+      }
+
+      function mostrarVistaPreviaSplit() {
+        const lista = document.getElementById('splitPreviewList');
+        lista.innerHTML = '';
+
+        if (totalPagsSplit === 0) {
+          const li = document.createElement('li'); li.className = 'pdf-empty';
+          li.textContent = 'Carga un PDF para ver la distribución'; lista.appendChild(li);
+          document.getElementById('splitHint').textContent = '—';
+          return;
+        }
+
+        const size   = getSplitSize();
+        const bloques = calcularBloques(totalPagsSplit, size, baseNameSplit);
+
+        document.getElementById('splitHint').textContent =
+          `${bloques.length} archivo${bloques.length !== 1 ? 's' : ''}`;
+
+        bloques.forEach(({ folioDesde, folioHasta, foliosReales, nombre }, i) => {
+          const li = document.createElement('li'); li.className = 'pdf-item';
+
+          const num = document.createElement('span'); num.className = 'pdf-num';
+          num.textContent = String(i + 1).padStart(2, '0');
+
+          const ico = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = '📄';
+
+          const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = nombre;
+
+          const meta = document.createElement('span'); meta.className = 'pdf-meta';
+          meta.textContent = foliosReales === 1
+            ? `folio ${String(folioDesde).padStart(3,'0')}`
+            : `${foliosReales} folios`;
+
+          li.append(num, ico, name, meta);
+          lista.appendChild(li);
+        });
+      }
+
+      // Expuesto globalmente para el oninput del input
+      function recalcularSplit() {
+        mostrarVistaPreviaSplit();
+        actualizarSplitBadge();
+      }
+      window.recalcularSplit = recalcularSplit;
+
+      async function cargarPDFParaDividir() {
+        const fi = document.createElement('input'); fi.type = 'file'; fi.accept = '.pdf';
+        fi.onchange = async () => {
+          if (!fi.files[0]) return;
+          const file = fi.files[0];
+          baseNameSplit = file.name.replace(/\.pdf$/i, '');
+          setStatus('Leyendo ' + file.name + '...', 'busy');
+          try {
+            const bytes   = await file.arrayBuffer();
+            pdfSrcDoc     = await PDFDocument.load(bytes);
+            totalPagsSplit = pdfSrcDoc.getPageCount();
+            mostrarVistaPreviaSplit();
+            actualizarSplitBadge();
+            setStatus(`PDF listo · ${totalPagsSplit} páginas · ${Math.ceil(totalPagsSplit / 2)} folios`, 'ok');
+          } catch (err) { setStatus('Error al leer PDF: ' + err.message, 'err'); }
+        };
+        fi.click();
+      }
+
+      async function dividirPDF() {
+        if (!pdfSrcDoc || totalPagsSplit === 0) { setStatus('Carga un PDF primero.', 'err'); return; }
+        const size    = getSplitSize();
+        const bloques = calcularBloques(totalPagsSplit, size, baseNameSplit);
+        const zip     = new JSZip();
+
+        setStatus(`Dividiendo en ${bloques.length} archivos...`, 'busy');
+
+        try {
+          for (let b = 0; b < bloques.length; b++) {
+            const { paginaDesde, paginaHasta, nombre } = bloques[b];
+            setStatus(`Generando ${nombre} (${b + 1}/${bloques.length})...`, 'busy');
+            await new Promise(r => setTimeout(r, 0));
+
+            const docBloque = await PDFDocument.create();
+            // Índices base-0: paginaDesde y paginaHasta son base-1
+            const indices = [];
+            for (let p = paginaDesde - 1; p < paginaHasta; p++) indices.push(p);
+
+            const paginas = await docBloque.copyPages(pdfSrcDoc, indices);
+            paginas.forEach(p => docBloque.addPage(p));
+
+            const bytesBloque = await docBloque.save();
+            zip.file(nombre, bytesBloque);
+          }
+
+          setStatus('Comprimiendo ZIP...', 'busy');
+          const blobZip = await zip.generateAsync({ type: 'blob' });
+          const a = document.createElement('a');
+          a.href     = URL.createObjectURL(blobZip);
+          a.download = `${baseNameSplit}_dividido.zip`;
+          a.click();
+
+          setStatus(`Listo · ${bloques.length} PDFs generados en ZIP`, 'ok');
+        } catch (err) { setStatus('Error al dividir PDF: ' + err.message, 'err'); }
+      }
+
+      window.cargarPDFParaDividir = cargarPDFParaDividir;
+      window.dividirPDF           = dividirPDF;
+
+      mostrarVistaPreviaSplit();
+      actualizarSplitBadge();
     </script>
 
   </body>
