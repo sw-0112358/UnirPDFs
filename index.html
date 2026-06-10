@@ -624,7 +624,7 @@
         });
       }
 
-      async function XconvertirZipAPDF() {
+      async function convertirZipAPDFv1() {
         if (!zipPDFGlobal || imagenesOrdenadas.length === 0) { setStatus('Carga un ZIP con imágenes primero.', 'err'); return; }
         window.setStatus('Creando PDF...', 'busy');
         try {
@@ -717,7 +717,7 @@
         });
       }
 
-      async function convertirZipAPDF() {
+      async function convertirZipAPDFv2() {
         if (!zipPDFGlobal || imagenesOrdenadas.length === 0) { window.setStatus('Carga un ZIP con imágenes primero.', 'err'); return; }
 
         const autoCrop  = document.getElementById('chkAutoCrop').checked;
@@ -787,6 +787,19 @@
         } catch (err) { window.setStatus('Error al generar PDF: ' + err.message, 'err'); }
       }
 
+
+      function convertirZipAPDF() {
+        const autoCrop  = document.getElementById('chkAutoCrop').checked;
+        const usaCarta  = document.getElementById('chkLetraCarta').checked;
+        const blanquear = document.getElementById('chkBlanquear').checked;
+        if (autoCrop || usaCarta || blanquear) {
+          return convertirZipAPDFv2();
+        } else {
+          return convertirZipAPDFv1();
+        }
+      }
+
+      
       // Hint dinámico de los checks
       function actualizarHint() {
         const crop  = document.getElementById('chkAutoCrop').checked;
