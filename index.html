@@ -699,8 +699,6 @@
           w: right - left + 1 - trim * 2,
           h: bottom - top + 1 - trim * 2
         };
-
-
       }
 
       function recortarCanvas(canvas, tolerancia = 20) {
@@ -794,7 +792,7 @@
         const autoCrop  = document.getElementById('chkAutoCrop').checked;
         const usaCarta  = document.getElementById('chkLetraCarta').checked;
 
-        if (autoCrop || usaCarta || blanquear) {
+        if (autoCrop || usaCarta ) {
           return convertirZipAPDFv2();
         } else {
           return convertirZipAPDFv1();
@@ -819,9 +817,7 @@
 
       window.cargarZipParaPDF = cargarZipParaPDF;
       window.convertirZipAPDF = convertirZipAPDF;
-      mostrarVistaPrevia(); actualizarBadgeZip2PDF();
-
-
+     
 
     </script>
 
