@@ -368,6 +368,7 @@
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-mid);">
                   <input type="checkbox" id="chkAutoCrop"> Auto-recorte
                 </label>
+                <input type="number" id="cropTrim" value="3" min="0" max="50" style="width:54px;font-size:12px;padding:4px 6px;" title="Píxeles de recorte adicional">
                 <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text-mid);margin-left:16px;">
                   <input type="checkbox" id="chkLetraCarta"> Tamaño carta
                 </label>
@@ -691,11 +692,12 @@
         outer: for (let x = W-1; x >= 0; x--)  { for (let y = top; y <= bottom; y++) { if (!esFondo(x,y)) { right  = x; break outer; } } }
 
 
+        const trim = parseInt(document.getElementById('cropTrim').value, 10) || 0;
         return {
-          x: left,
-          y: top,
-          w: right - left + 1,
-          h: bottom - top + 1
+          x: left + trim,
+          y: top + trim,
+          w: right - left + 1 - trim * 2,
+          h: bottom - top + 1 - trim * 2
         };
 
 
@@ -791,7 +793,7 @@
       function convertirZipAPDF() {
         const autoCrop  = document.getElementById('chkAutoCrop').checked;
         const usaCarta  = document.getElementById('chkLetraCarta').checked;
-        const blanquear = document.getElementById('chkBlanquear').checked;
+
         if (autoCrop || usaCarta || blanquear) {
           return convertirZipAPDFv2();
         } else {
@@ -799,7 +801,7 @@
         }
       }
 
-      
+
       // Hint dinámico de los checks
       function actualizarHint() {
         const crop  = document.getElementById('chkAutoCrop').checked;
