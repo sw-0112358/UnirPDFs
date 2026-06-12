@@ -399,16 +399,35 @@
             <input type="number" id="NumerodefolioUnirpdf" value="1" placeholder="N°" min="1" style="width:100px;">
           </div>
 
-          <div class="card-body">           
+          <div class="card-body">
             <ul class="pdf-list" id="pdfList">
               <li class="pdf-empty">Selecciona archivos PDF para comenzar</li>
             </ul>
+
+            <!-- Panel de reemplazo: oculto hasta la primera carga -->
+            <div id="panelReemplazo" style="display:none;">
+              <div class="divider"></div>
+              <div class="split-config" style="margin-bottom:10px;">
+                <label style="font-size:12px;font-weight:500;color:var(--text-mid);white-space:nowrap;">
+                  Reemplazar desde folio
+                </label>
+                <input type="number" id="folioInicioReemplazo" min="1" placeholder="—"
+                       style="width:80px;font-size:13px;padding:5px 8px;">
+                <span class="card-badge" id="reemplazoBadge" style="margin-left:auto;">Sin cargar</span>
+              </div>
+              <ul class="pdf-list" id="pdfListReemplazo">
+                <li class="pdf-empty">Sin archivos de reemplazo cargados</li>
+              </ul>
+            </div>
+
             <div class="divider"></div>
             <div class="btn-row">
-              <button class="btn btn-outline" onclick="cargarPDFs()">📑 Seleccionar PDFs</button>
+              <button class="btn btn-outline" id="btnCargarPDFs" onclick="cargarPDFs()">📑 Seleccionar PDFs</button>
               <button class="btn btn-primary" id="btnUnir" onclick="unirPDFs()" disabled>📩 Unir y descargar</button>
             </div>
           </div>
+
+
         </div>
       </div>
 
@@ -817,7 +836,7 @@
 
       window.cargarZipParaPDF = cargarZipParaPDF;
       window.convertirZipAPDF = convertirZipAPDF;
-     
+
 
     </script>
 
@@ -828,12 +847,19 @@
     <script type="module">
       import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
 
-      let archivosPDF = [];
+      let archivosPDF    = [];
+      let archivosReemplazo = [];
+      let faseReemplazo  = false;   // true = ya se cargó el lote principal
 
       function actualizarPdfBadge() {
         const badge = document.getElementById('pdfBadge');
-        if (archivosPDF.length > 0) { badge.textContent = archivosPDF.length + ' archivo' + (archivosPDF.length > 1 ? 's' : ''); badge.className = 'card-badge active'; }
-        else { badge.textContent = 'Sin cargar'; badge.className = 'card-badge'; }
+        if (archivosPDF.length > 0) {
+          badge.textContent = archivosPDF.length + ' archivo' + (archivosPDF.length > 1 ? 's' : '');
+          badge.className = 'card-badge active';
+        } else {
+          badge.textContent = 'Sin cargar';
+          badge.className = 'card-badge';
+        }
         document.getElementById('btnUnir').disabled = archivosPDF.length === 0;
       }
 
@@ -842,19 +868,38 @@
         lista.innerHTML = '';
         if (archivosPDF.length === 0) {
           const li = document.createElement('li'); li.className = 'pdf-empty';
-          li.textContent = 'Selecciona archivos PDF para comenzar'; lista.appendChild(li);
+          li.textContent = 'Selecciona archivos PDF para comenzar';
+          lista.appendChild(li);
           actualizarPdfBadge(); return;
         }
         archivosPDF.forEach((file, index) => {
-          const li = document.createElement('li'); li.className = 'pdf-item';
-          const num = document.createElement('span'); num.className = 'pdf-num'; num.textContent = String(index + 1).padStart(2, '0');
-          const ico = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = '📄';
+          const li   = document.createElement('li'); li.className = 'pdf-item';
+          const num  = document.createElement('span'); num.className = 'pdf-num'; num.textContent = String(index + 1).padStart(2, '0');
+          const ico  = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = '📄';
           const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = file.name;
-          const up = document.createElement('button'); up.className = 'move-btn'; up.textContent = '↑'; up.onclick = () => moverArchivo(index, -1);
-          const dn = document.createElement('button'); dn.className = 'move-btn'; dn.textContent = '↓'; dn.onclick = () => moverArchivo(index, 1);
+          const up   = document.createElement('button'); up.className = 'move-btn'; up.textContent = '↑'; up.onclick = () => moverArchivo(index, -1);
+          const dn   = document.createElement('button'); dn.className = 'move-btn'; dn.textContent = '↓'; dn.onclick = () => moverArchivo(index, 1);
           li.append(num, ico, name, up, dn); lista.appendChild(li);
         });
         actualizarPdfBadge();
+      }
+
+      function mostrarListaReemplazo() {
+        const lista = document.getElementById('pdfListReemplazo');
+        if (!lista) return;
+        lista.innerHTML = '';
+        if (archivosReemplazo.length === 0) {
+          const li = document.createElement('li'); li.className = 'pdf-empty';
+          li.textContent = 'Sin archivos de reemplazo cargados';
+          lista.appendChild(li); return;
+        }
+        archivosReemplazo.forEach((file, index) => {
+          const li   = document.createElement('li'); li.className = 'pdf-item';
+          const num  = document.createElement('span'); num.className = 'pdf-num'; num.textContent = String(index + 1).padStart(2, '0');
+          const ico  = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = '🔁';
+          const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = file.name;
+          li.append(num, ico, name); lista.appendChild(li);
+        });
       }
 
       function moverArchivo(index, dir) {
@@ -864,27 +909,80 @@
         mostrarListaPDFs();
       }
 
-
       function PDFUnidoName(totalPaginas) {
         const folioInicial = parseInt(document.getElementById('NumerodefolioUnirpdf').value, 10);
         if (isNaN(folioInicial)) return 'PDF_Unido.pdf';
-
-        // Folio inicial con 3 dígitos
         const folioInicialStr = String(folioInicial).padStart(3, '0');
-
-        // Calcular folio final
-        const folioFinal = folioInicial + Math.floor(totalPaginas / 2) - 1;
-        const folioFinalStr = String(folioFinal).padStart(3, '0');
-
+        const folioFinal      = folioInicial + Math.floor(totalPaginas / 2) - 1;
+        const folioFinalStr   = String(folioFinal).padStart(3, '0');
         return folioInicialStr + '_' + folioFinalStr + '.pdf';
       }
 
+      // Cuenta el total de páginas de un array de Files PDF
+      async function contarPaginas(archivos) {
+        let total = 0;
+        for (const f of archivos) {
+          const doc = await PDFDocument.load(await f.arrayBuffer());
+          total += doc.getPageCount();
+        }
+        return total;
+      }
+
+      // Actualiza el badge del reemplazo con los folios que tiene
+      async function actualizarBadgeReemplazo() {
+        const badge = document.getElementById('reemplazoBadge');
+        if (!badge) return;
+        if (archivosReemplazo.length === 0) {
+          badge.textContent = 'Sin cargar'; badge.className = 'card-badge'; return;
+        }
+        const pags = await contarPaginas(archivosReemplazo);
+        const folios = Math.ceil(pags / 2);
+        badge.textContent = `${folios} folio${folios !== 1 ? 's' : ''} de reemplazo`;
+        badge.className = 'card-badge active';
+      }
+
+      // Muestra u oculta el panel de reemplazo
+      function mostrarPanelReemplazo(visible) {
+        const panel = document.getElementById('panelReemplazo');
+        if (panel) panel.style.display = visible ? '' : 'none';
+      }
+
+      // Cambia el botón principal entre "Seleccionar PDFs" y "Reemplazar folios"
+      function actualizarBotonCargar() {
+        const btn = document.getElementById('btnCargarPDFs');
+        if (!btn) return;
+        if (faseReemplazo) {
+          btn.textContent = '🔁 Reemplazar folios';
+        } else {
+          btn.textContent = '📑 Seleccionar PDFs';
+        }
+      }
+
       async function cargarPDFs() {
-        const fi = document.createElement('input'); fi.type = 'file'; fi.accept = '.pdf'; fi.multiple = true;
-        fi.onchange = () => {
-          archivosPDF = Array.from(fi.files).sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-          mostrarListaPDFs();
-          window.setStatus(`${archivosPDF.length} archivo(s) PDF seleccionado(s).`, 'ok');
+        const fi = document.createElement('input');
+        fi.type = 'file'; fi.accept = '.pdf'; fi.multiple = true;
+        fi.onchange = async () => {
+          if (!fi.files || fi.files.length === 0) return;
+          const archivos = Array.from(fi.files).sort((a, b) =>
+                                                     a.name.localeCompare(b.name, undefined, { numeric: true }));
+
+          if (!faseReemplazo) {
+            // Primera carga — lote principal
+            archivosPDF = archivos;
+            archivosReemplazo = [];
+            faseReemplazo = true;
+            mostrarListaPDFs();
+            mostrarPanelReemplazo(true);
+            actualizarBotonCargar();
+            window.setStatus(`${archivosPDF.length} archivo(s) PDF seleccionado(s).`, 'ok');
+          } else {
+            // Segunda carga — lote de reemplazo
+            archivosReemplazo = archivos;
+            mostrarListaReemplazo();
+            await actualizarBadgeReemplazo();
+            window.setStatus(`${archivosReemplazo.length} archivo(s) de reemplazo cargado(s).`, 'ok');
+          }
+          actualizarPdfBadge();
         };
         fi.click();
       }
@@ -893,32 +991,102 @@
         if (archivosPDF.length === 0) { window.setStatus('Selecciona archivos PDF primero.', 'err'); return; }
         const folioInicial = parseInt(document.getElementById('NumerodefolioUnirpdf').value, 10);
         if (isNaN(folioInicial)) { window.setStatus('Número de folio inválido.', 'err'); return; }
+
+        // ¿Hay reemplazo configurado?
+        const folioReemplazoInput = document.getElementById('folioInicioReemplazo');
+        const folioReemplazo = folioReemplazoInput
+        ? parseInt(folioReemplazoInput.value, 10)
+        : NaN;
+        const hayReemplazo = archivosReemplazo.length > 0 && !isNaN(folioReemplazo) && folioReemplazo >= 1;
+
         try {
+          window.setStatus('Iniciando...', 'busy');
+          const merged = await PDFDocument.create();
 
-          window.setStatus('UnirPDFs iniciado', 'busy'); 
+          if (!hayReemplazo) {
+            // ── Comportamiento original ──
+            let totalPaginas = 0;
+            for (const file of archivosPDF) {
+              const doc = await PDFDocument.load(await file.arrayBuffer()); totalPaginas += doc.getPageCount();
+            }
+            let paginaActual = 0;
+            for (const file of archivosPDF) {
+              const doc = await PDFDocument.load(await file.arrayBuffer());
+              for (const idx of doc.getPageIndices()) {
+                const [p] = await merged.copyPages(doc, [idx]);
+                merged.addPage(p); paginaActual++;
+                window.setStatus(`Procesando página ${paginaActual} de ${totalPaginas}...`, 'busy');
+                await new Promise(r => setTimeout(r, 0));
+              }
+            }
+            const nombreFinal = PDFUnidoName(totalPaginas);
+            const bytes = await merged.save();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+            a.download = nombreFinal; a.click();
+            window.setStatus('PDF generado: ' + nombreFinal, 'ok');
 
-          const mergedPdf = await PDFDocument.create();
-          let totalPaginas = 0;
-          for (const file of archivosPDF) {
-            const pdf = await PDFDocument.load(await file.arrayBuffer());
-            totalPaginas += pdf.getPageCount();
-          }
-          let paginaActual = 0;
-          for (const file of archivosPDF) {
-            const pdf = await PDFDocument.load(await file.arrayBuffer());
-            for (const idx of pdf.getPageIndices()) {
-              const [p] = await mergedPdf.copyPages(pdf, [idx]);
-              mergedPdf.addPage(p); paginaActual++;
-              window.setStatus(`Procesando página ${paginaActual} de ${totalPaginas}...`, 'busy');
+          } else {
+            // ── Lógica de reemplazo ──
+            // folioReemplazo es base-1 relativo al lote principal.
+            // Página de corte base-0: (folioReemplazo - 1) * 2
+            const paginaCorte0 = (folioReemplazo - 1) * 2;   // primera página a SALTAR del principal
+
+            // 1) Cargar todas las páginas del lote principal en un array
+            const pagsPrincipal = [];
+            for (const file of archivosPDF) {
+              const doc = await PDFDocument.load(await file.arrayBuffer());
+              for (const idx of doc.getPageIndices()) pagsPrincipal.push({ doc, idx });
+            }
+
+            // 2) Cargar todas las páginas del lote de reemplazo
+            const pagsReemplazo = [];
+            for (const file of archivosReemplazo) {
+              const doc = await PDFDocument.load(await file.arrayBuffer());
+              for (const idx of doc.getPageIndices()) pagsReemplazo.push({ doc, idx });
+            }
+
+            // 3) Copiar páginas del principal ANTES del corte
+            let totalCopied = 0;
+            const totalEstimado = pagsPrincipal.length + pagsReemplazo.length;
+
+            for (let i = 0; i < Math.min(paginaCorte0, pagsPrincipal.length); i++) {
+              const { doc, idx } = pagsPrincipal[i];
+              const [p] = await merged.copyPages(doc, [idx]);
+              merged.addPage(p); totalCopied++;
+              window.setStatus(`Copiando principal ${totalCopied}/${totalEstimado}...`, 'busy');
               await new Promise(r => setTimeout(r, 0));
             }
+
+            // 4) Copiar TODAS las páginas del reemplazo
+            for (let i = 0; i < pagsReemplazo.length; i++) {
+              const { doc, idx } = pagsReemplazo[i];
+              const [p] = await merged.copyPages(doc, [idx]);
+              merged.addPage(p); totalCopied++;
+              window.setStatus(`Insertando reemplazo ${i + 1}/${pagsReemplazo.length}...`, 'busy');
+              await new Promise(r => setTimeout(r, 0));
+            }
+
+            // 5) Copiar páginas del principal DESPUÉS del bloque reemplazado
+            // El bloque reemplazado ocupa pagsReemplazo.length páginas a partir de paginaCorte0
+            const paginaReanuda0 = paginaCorte0 + pagsReemplazo.length;
+            for (let i = paginaReanuda0; i < pagsPrincipal.length; i++) {
+              const { doc, idx } = pagsPrincipal[i];
+              const [p] = await merged.copyPages(doc, [idx]);
+              merged.addPage(p); totalCopied++;
+              window.setStatus(`Copiando resto ${totalCopied}/${totalEstimado}...`, 'busy');
+              await new Promise(r => setTimeout(r, 0));
+            }
+
+            const totalPaginasFinal = merged.getPageCount();
+            const nombreFinal = PDFUnidoName(totalPaginasFinal);
+            const bytes = await merged.save();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+            a.download = nombreFinal; a.click();
+            window.setStatus(`PDF generado: ${nombreFinal} · ${totalPaginasFinal} páginas`, 'ok');
           }
-          const nombreFinal = PDFUnidoName(totalPaginas);
-          const mergedBytes = await mergedPdf.save();
-          const a = document.createElement('a');
-          a.href = URL.createObjectURL(new Blob([mergedBytes], { type: 'application/pdf' }));
-          a.download = nombreFinal; a.click();
-          window.setStatus('PDF generado: ' + nombreFinal, 'ok');
+
         } catch (err) { window.setStatus('Error al unir PDFs: ' + err.message, 'err'); }
       }
 
@@ -927,7 +1095,6 @@
       mostrarListaPDFs();
 
     </script>
-
 
 
     <!-- ══ Dividir PDF ══ -->
