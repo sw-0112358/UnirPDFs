@@ -296,6 +296,32 @@
 
       /* ─── Footer ─── */
       .footer { margin-top: 48px; font-size: 11px; color: var(--text-lo); letter-spacing: 0.04em; text-align: center; }
+
+      /* ─── Input inline en item de reemplazo ─── */
+      .reemplazo-folio-input {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text);
+        background: var(--paper);
+        border: 1.5px solid var(--border);
+        border-radius: 4px;
+        padding: 3px 6px;
+        width: 58px;
+        outline: none;
+        text-align: center;
+        flex-shrink: 0;
+        transition: border-color .15s, box-shadow .15s;
+      }
+      .reemplazo-folio-input:focus {
+        border-color: var(--red);
+        box-shadow: 0 0 0 2px var(--red-lo);
+      }
+      .reemplazo-folio-input.conflict {
+        border-color: var(--red);
+        background: var(--red-lo);
+      }
+
     </style>
   </head>
   <body>
@@ -847,10 +873,11 @@
     <script type="module">
       import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib';
 
-      let archivosPDF    = [];
-      let archivosReemplazo = [];
-      let faseReemplazo  = false;   // true = ya se cargó el lote principal
+      let archivosPDF       = [];
+      let archivosReemplazo = [];   // [{ file, folioInicio }]  folioInicio = null si vacío
+      let faseReemplazo     = false;
 
+      // ── Badge principal ──
       function actualizarPdfBadge() {
         const badge = document.getElementById('pdfBadge');
         if (archivosPDF.length > 0) {
@@ -863,6 +890,7 @@
         document.getElementById('btnUnir').disabled = archivosPDF.length === 0;
       }
 
+      // ── Lista principal ──
       function mostrarListaPDFs() {
         const lista = document.getElementById('pdfList');
         lista.innerHTML = '';
@@ -879,27 +907,10 @@
           const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = file.name;
           const up   = document.createElement('button'); up.className = 'move-btn'; up.textContent = '↑'; up.onclick = () => moverArchivo(index, -1);
           const dn   = document.createElement('button'); dn.className = 'move-btn'; dn.textContent = '↓'; dn.onclick = () => moverArchivo(index, 1);
-          li.append(num, ico, name, up, dn); lista.appendChild(li);
+          li.append(num, ico, name, up, dn);
+          lista.appendChild(li);
         });
         actualizarPdfBadge();
-      }
-
-      function mostrarListaReemplazo() {
-        const lista = document.getElementById('pdfListReemplazo');
-        if (!lista) return;
-        lista.innerHTML = '';
-        if (archivosReemplazo.length === 0) {
-          const li = document.createElement('li'); li.className = 'pdf-empty';
-          li.textContent = 'Sin archivos de reemplazo cargados';
-          lista.appendChild(li); return;
-        }
-        archivosReemplazo.forEach((file, index) => {
-          const li   = document.createElement('li'); li.className = 'pdf-item';
-          const num  = document.createElement('span'); num.className = 'pdf-num'; num.textContent = String(index + 1).padStart(2, '0');
-          const ico  = document.createElement('span'); ico.className = 'pdf-ico'; ico.textContent = '🔁';
-          const name = document.createElement('span'); name.className = 'pdf-name'; name.textContent = file.name;
-          li.append(num, ico, name); lista.appendChild(li);
-        });
       }
 
       function moverArchivo(index, dir) {
@@ -909,6 +920,115 @@
         mostrarListaPDFs();
       }
 
+      // ── Lista de reemplazos (con inputs inline) ──
+      function mostrarListaReemplazo() {
+        const lista = document.getElementById('pdfListReemplazo');
+        if (!lista) return;
+        lista.innerHTML = '';
+        if (archivosReemplazo.length === 0) {
+          const li = document.createElement('li'); li.className = 'pdf-empty';
+          li.textContent = 'Sin archivos de reemplazo cargados';
+          lista.appendChild(li); return;
+        }
+        archivosReemplazo.forEach((entrada, index) => {
+          const li   = document.createElement('li'); li.className = 'pdf-item';
+
+          const num  = document.createElement('span'); num.className = 'pdf-num';
+          num.textContent = String(index + 1).padStart(2, '0');
+
+          const ico  = document.createElement('span'); ico.className = 'pdf-ico';
+          ico.textContent = '🔁';
+
+          const name = document.createElement('span'); name.className = 'pdf-name';
+          name.textContent = entrada.file.name;
+
+          // Input de folio inicio
+          const inp = document.createElement('input');
+          inp.type = 'number'; inp.min = '1'; inp.placeholder = '—';
+          inp.className = 'reemplazo-folio-input';
+          inp.value = entrada.folioInicio !== null ? entrada.folioInicio : '';
+          inp.title = 'Folio de inicio en el documento principal';
+          inp.addEventListener('input', () => {
+            const v = parseInt(inp.value, 10);
+            archivosReemplazo[index].folioInicio = isNaN(v) ? null : v;
+            validarSolapamientos();
+          });
+
+          li.append(num, ico, name, inp);
+          lista.appendChild(li);
+        });
+        validarSolapamientos();
+      }
+
+      // ── Detectar solapamientos y bloquear botón ──
+      // Devuelve true si todo está OK, false si hay conflicto
+      async function validarSolapamientos() {
+        const btn = document.getElementById('btnUnir');
+
+        // Solo los reemplazos con folio asignado
+        const activos = archivosReemplazo
+        .map((e, i) => ({ ...e, _idx: i }))
+        .filter(e => e.folioInicio !== null);
+
+        if (activos.length < 2) {
+          // Sin posibilidad de solapamiento: limpiar estilos y desbloquear
+          document.querySelectorAll('.reemplazo-folio-input').forEach(el => el.classList.remove('conflict'));
+          if (archivosPDF.length > 0) btn.disabled = false;
+          return true;
+        }
+
+        // Necesitamos saber cuántos folios tiene cada reemplazo
+        // Usamos caché para no releer cada vez
+        const foliosPorIdx = await Promise.all(
+          archivosReemplazo.map(async (e) => {
+            if (!e._paginasCache) {
+              try {
+                const doc = await PDFDocument.load(await e.file.arrayBuffer());
+                e._paginasCache = doc.getPageCount();
+              } catch { e._paginasCache = 0; }
+            }
+            return Math.ceil(e._paginasCache / 2);
+          })
+        );
+
+        // Construir intervalos [inicio, fin] para los activos
+        const intervalos = activos.map(e => ({
+          _idx: e._idx,
+          inicio: e.folioInicio,
+          fin:    e.folioInicio + foliosPorIdx[e._idx] - 1
+        }));
+
+        // Detectar solapamientos
+        const conflictivos = new Set();
+        for (let i = 0; i < intervalos.length; i++) {
+          for (let j = i + 1; j < intervalos.length; j++) {
+            const a = intervalos[i], b = intervalos[j];
+            if (a.inicio <= b.fin && b.inicio <= a.fin) {
+              conflictivos.add(a._idx);
+              conflictivos.add(b._idx);
+            }
+          }
+        }
+
+        // Aplicar estilos a los inputs
+        const inputs = document.querySelectorAll('.reemplazo-folio-input');
+        archivosReemplazo.forEach((_, i) => {
+          if (inputs[i]) inputs[i].classList.toggle('conflict', conflictivos.has(i));
+        });
+
+        const hayConflicto = conflictivos.size > 0;
+        btn.disabled = hayConflicto || archivosPDF.length === 0;
+
+        if (hayConflicto) {
+          window.setStatus('⚠ Solapamiento entre reemplazos — corrige los folios marcados', 'err');
+        } else {
+          window.setStatus('Reemplazos sin conflictos · listo para unir', 'ok');
+        }
+
+        return !hayConflicto;
+      }
+
+      // ── Nombre del PDF resultado ──
       function PDFUnidoName(totalPaginas) {
         const folioInicial = parseInt(document.getElementById('NumerodefolioUnirpdf').value, 10);
         if (isNaN(folioInicial)) return 'PDF_Unido.pdf';
@@ -918,46 +1038,19 @@
         return folioInicialStr + '_' + folioFinalStr + '.pdf';
       }
 
-      // Cuenta el total de páginas de un array de Files PDF
-      async function contarPaginas(archivos) {
-        let total = 0;
-        for (const f of archivos) {
-          const doc = await PDFDocument.load(await f.arrayBuffer());
-          total += doc.getPageCount();
-        }
-        return total;
-      }
-
-      // Actualiza el badge del reemplazo con los folios que tiene
-      async function actualizarBadgeReemplazo() {
-        const badge = document.getElementById('reemplazoBadge');
-        if (!badge) return;
-        if (archivosReemplazo.length === 0) {
-          badge.textContent = 'Sin cargar'; badge.className = 'card-badge'; return;
-        }
-        const pags = await contarPaginas(archivosReemplazo);
-        const folios = Math.ceil(pags / 2);
-        badge.textContent = `${folios} folio${folios !== 1 ? 's' : ''} de reemplazo`;
-        badge.className = 'card-badge active';
-      }
-
-      // Muestra u oculta el panel de reemplazo
+      // ── Panel de reemplazo ──
       function mostrarPanelReemplazo(visible) {
         const panel = document.getElementById('panelReemplazo');
         if (panel) panel.style.display = visible ? '' : 'none';
       }
 
-      // Cambia el botón principal entre "Seleccionar PDFs" y "Reemplazar folios"
       function actualizarBotonCargar() {
         const btn = document.getElementById('btnCargarPDFs');
         if (!btn) return;
-        if (faseReemplazo) {
-          btn.textContent = '🔁 Reemplazar folios';
-        } else {
-          btn.textContent = '📑 Seleccionar PDFs';
-        }
+        btn.textContent = faseReemplazo ? '🔁 Reemplazar folios' : '📑 Seleccionar PDFs';
       }
 
+      // ── Cargar PDFs ──
       async function cargarPDFs() {
         const fi = document.createElement('input');
         fi.type = 'file'; fi.accept = '.pdf'; fi.multiple = true;
@@ -967,19 +1060,23 @@
                                                      a.name.localeCompare(b.name, undefined, { numeric: true }));
 
           if (!faseReemplazo) {
-            // Primera carga — lote principal
-            archivosPDF = archivos;
+            archivosPDF       = archivos;
             archivosReemplazo = [];
-            faseReemplazo = true;
+            faseReemplazo     = true;
             mostrarListaPDFs();
             mostrarPanelReemplazo(true);
             actualizarBotonCargar();
             window.setStatus(`${archivosPDF.length} archivo(s) PDF seleccionado(s).`, 'ok');
           } else {
-            // Segunda carga — lote de reemplazo
-            archivosReemplazo = archivos;
+            // Preservar folios ya escritos si el archivo coincide por nombre
+            const mapaAnterior = {};
+            archivosReemplazo.forEach(e => { mapaAnterior[e.file.name] = e.folioInicio; });
+            archivosReemplazo = archivos.map(f => ({
+              file: f,
+              folioInicio: mapaAnterior[f.name] ?? null,
+              _paginasCache: null
+            }));
             mostrarListaReemplazo();
-            await actualizarBadgeReemplazo();
             window.setStatus(`${archivosReemplazo.length} archivo(s) de reemplazo cargado(s).`, 'ok');
           }
           actualizarPdfBadge();
@@ -987,17 +1084,18 @@
         fi.click();
       }
 
+      // ── Unir PDFs ──
       async function unirPDFs() {
         if (archivosPDF.length === 0) { window.setStatus('Selecciona archivos PDF primero.', 'err'); return; }
         const folioInicial = parseInt(document.getElementById('NumerodefolioUnirpdf').value, 10);
         if (isNaN(folioInicial)) { window.setStatus('Número de folio inválido.', 'err'); return; }
 
-        // ¿Hay reemplazo configurado?
-        const folioReemplazoInput = document.getElementById('folioInicioReemplazo');
-        const folioReemplazo = folioReemplazoInput
-        ? parseInt(folioReemplazoInput.value, 10)
-        : NaN;
-        const hayReemplazo = archivosReemplazo.length > 0 && !isNaN(folioReemplazo) && folioReemplazo >= 1;
+        // Reemplazos activos (con folio asignado), ordenados por folio de inicio
+        const reemplazosActivos = archivosReemplazo
+        .filter(e => e.folioInicio !== null)
+        .sort((a, b) => a.folioInicio - b.folioInicio);
+
+        const hayReemplazo = reemplazosActivos.length > 0;
 
         try {
           window.setStatus('Iniciando...', 'busy');
@@ -1007,7 +1105,8 @@
             // ── Comportamiento original ──
             let totalPaginas = 0;
             for (const file of archivosPDF) {
-              const doc = await PDFDocument.load(await file.arrayBuffer()); totalPaginas += doc.getPageCount();
+              const doc = await PDFDocument.load(await file.arrayBuffer());
+              totalPaginas += doc.getPageCount();
             }
             let paginaActual = 0;
             for (const file of archivosPDF) {
@@ -1019,7 +1118,7 @@
                 await new Promise(r => setTimeout(r, 0));
               }
             }
-            const nombreFinal = PDFUnidoName(totalPaginas);
+            const nombreFinal = PDFUnidoName(merged.getPageCount());
             const bytes = await merged.save();
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
@@ -1027,64 +1126,64 @@
             window.setStatus('PDF generado: ' + nombreFinal, 'ok');
 
           } else {
-            // ── Lógica de reemplazo ──
-            // folioReemplazo es base-1 relativo al lote principal.
-            // Página de corte base-0: (folioReemplazo - 1) * 2
-            const paginaCorte0 = (folioReemplazo - 1) * 2;   // primera página a SALTAR del principal
+            // ── Lógica multi-reemplazo ──
 
-            // 1) Cargar todas las páginas del lote principal en un array
+            // 1) Cargar páginas del principal
             const pagsPrincipal = [];
             for (const file of archivosPDF) {
               const doc = await PDFDocument.load(await file.arrayBuffer());
               for (const idx of doc.getPageIndices()) pagsPrincipal.push({ doc, idx });
             }
 
-            // 2) Cargar todas las páginas del lote de reemplazo
-            const pagsReemplazo = [];
-            for (const file of archivosReemplazo) {
-              const doc = await PDFDocument.load(await file.arrayBuffer());
-              for (const idx of doc.getPageIndices()) pagsReemplazo.push({ doc, idx });
+            // 2) Cargar páginas de cada reemplazo y calcular intervalos en páginas (base-0)
+            const bloques = [];
+            for (const entrada of reemplazosActivos) {
+              const doc = await PDFDocument.load(await entrada.file.arrayBuffer());
+              const pags = [];
+              for (const idx of doc.getPageIndices()) pags.push({ doc, idx });
+              const corte0 = (entrada.folioInicio - 1) * 2;   // página base-0 donde empieza
+              bloques.push({ corte0, pags });
             }
 
-            // 3) Copiar páginas del principal ANTES del corte
-            let totalCopied = 0;
-            const totalEstimado = pagsPrincipal.length + pagsReemplazo.length;
+            // 3) Recorrer el principal intercalando reemplazos
+            let cursorPrincipal = 0;   // posición base-0 en pagsPrincipal
 
-            for (let i = 0; i < Math.min(paginaCorte0, pagsPrincipal.length); i++) {
-              const { doc, idx } = pagsPrincipal[i];
+            for (const bloque of bloques) {
+              // Copiar páginas del principal hasta el corte
+              while (cursorPrincipal < bloque.corte0 && cursorPrincipal < pagsPrincipal.length) {
+                const { doc, idx } = pagsPrincipal[cursorPrincipal];
+                const [p] = await merged.copyPages(doc, [idx]);
+                merged.addPage(p); cursorPrincipal++;
+                window.setStatus(`Copiando principal… pág ${merged.getPageCount()}`, 'busy');
+                await new Promise(r => setTimeout(r, 0));
+              }
+              // Saltar las páginas del principal que este bloque reemplaza
+              cursorPrincipal = bloque.corte0 + bloque.pags.length;
+
+              // Insertar páginas del reemplazo
+              for (const { doc, idx } of bloque.pags) {
+                const [p] = await merged.copyPages(doc, [idx]);
+                merged.addPage(p);
+                window.setStatus(`Insertando reemplazo… pág ${merged.getPageCount()}`, 'busy');
+                await new Promise(r => setTimeout(r, 0));
+              }
+            }
+
+            // 4) Copiar el resto del principal tras el último reemplazo
+            while (cursorPrincipal < pagsPrincipal.length) {
+              const { doc, idx } = pagsPrincipal[cursorPrincipal];
               const [p] = await merged.copyPages(doc, [idx]);
-              merged.addPage(p); totalCopied++;
-              window.setStatus(`Copiando principal ${totalCopied}/${totalEstimado}...`, 'busy');
+              merged.addPage(p); cursorPrincipal++;
+              window.setStatus(`Copiando resto… pág ${merged.getPageCount()}`, 'busy');
               await new Promise(r => setTimeout(r, 0));
             }
 
-            // 4) Copiar TODAS las páginas del reemplazo
-            for (let i = 0; i < pagsReemplazo.length; i++) {
-              const { doc, idx } = pagsReemplazo[i];
-              const [p] = await merged.copyPages(doc, [idx]);
-              merged.addPage(p); totalCopied++;
-              window.setStatus(`Insertando reemplazo ${i + 1}/${pagsReemplazo.length}...`, 'busy');
-              await new Promise(r => setTimeout(r, 0));
-            }
-
-            // 5) Copiar páginas del principal DESPUÉS del bloque reemplazado
-            // El bloque reemplazado ocupa pagsReemplazo.length páginas a partir de paginaCorte0
-            const paginaReanuda0 = paginaCorte0 + pagsReemplazo.length;
-            for (let i = paginaReanuda0; i < pagsPrincipal.length; i++) {
-              const { doc, idx } = pagsPrincipal[i];
-              const [p] = await merged.copyPages(doc, [idx]);
-              merged.addPage(p); totalCopied++;
-              window.setStatus(`Copiando resto ${totalCopied}/${totalEstimado}...`, 'busy');
-              await new Promise(r => setTimeout(r, 0));
-            }
-
-            const totalPaginasFinal = merged.getPageCount();
-            const nombreFinal = PDFUnidoName(totalPaginasFinal);
+            const nombreFinal = PDFUnidoName(merged.getPageCount());
             const bytes = await merged.save();
             const a = document.createElement('a');
             a.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
             a.download = nombreFinal; a.click();
-            window.setStatus(`PDF generado: ${nombreFinal} · ${totalPaginasFinal} páginas`, 'ok');
+            window.setStatus(`PDF generado: ${nombreFinal} · ${merged.getPageCount()} páginas`, 'ok');
           }
 
         } catch (err) { window.setStatus('Error al unir PDFs: ' + err.message, 'err'); }
